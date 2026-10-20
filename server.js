@@ -18,7 +18,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ======================================================
-// CORS: DESARROLLO LOCAL Y PRODUCCIÓN EN RENDER
+// CORS: DESARROLLO LOCAL Y PRODUCCIÓN
 // ======================================================
 
 const permitidos = [
@@ -33,8 +33,6 @@ const permitidos = [
 app.use(
     cors({
         origin: (origin, callback) => {
-            // Permitir peticiones sin Origin, por ejemplo herramientas
-            // de pruebas y algunas peticiones del servidor.
             if (!origin) {
                 return callback(null, true);
             }
@@ -46,7 +44,6 @@ app.use(
             }
 
             console.error("Origen bloqueado por CORS:", origin);
-
             return callback(new Error("Origen no permitido por CORS"));
         },
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -98,7 +95,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(logger);
 
 // ======================================================
-// COMPROBACIÓN DE SALUD Y BASE DE DATOS
+// COMPROBACIÓN DEL SERVIDOR Y BASE DE DATOS
 // ======================================================
 
 app.get("/health", async (req, res) => {
@@ -144,7 +141,7 @@ app.use("/api/incidentes", incidentesRoutes);
 app.use(errorHandler);
 
 // ======================================================
-// CONEXIÓN A BASE DE DATOS E INICIO DEL SERVIDOR
+// CONEXIÓN, CREACIÓN DE TABLAS E INICIO DEL SERVIDOR
 // ======================================================
 
 async function iniciarServidor() {
@@ -153,18 +150,20 @@ async function iniciarServidor() {
 
         console.log("Conexión con SQLite establecida correctamente.");
 
+        // Crea las tablas que falten para los modelos registrados.
+        // No elimina ni recrea las tablas existentes.
+        await sequelize.sync();
+
+        console.log("Tablas de la base de datos verificadas.");
+
         app.listen(PORT, "0.0.0.0", () => {
             console.log(`Servidor iniciado en el puerto ${PORT}`);
-            console.log("Frontend disponible en la raíz de la aplicación.");
+            console.log("Inicio de sesión disponible en /login.html");
             console.log("API de autenticación disponible en /api/auth");
             console.log("API de incidentes disponible en /api/incidentes");
         });
     } catch (error) {
-        console.error(
-            "No se pudo conectar a la base de datos:",
-            error
-        );
-
+        console.error("No se pudo iniciar el servidor:", error);
         process.exit(1);
     }
 }
