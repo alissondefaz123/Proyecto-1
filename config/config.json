@@ -1,0 +1,14 @@
+{
+  "development": {
+    "dialect": "sqlite",
+    "storage": "./database/cybermonitor.sqlite"
+  },
+  "test": {
+    "dialect": "sqlite",
+    "storage": "./database/cybermonitor-test.sqlite"
+  },
+  "production": {
+    "dialect": "sqlite",
+    "storage": "./database/cybermonitor.sqlite"
+  }
+}

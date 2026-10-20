@@ -1,0 +1,47 @@
+[
+  {
+    "id": "INC-001",
+    "tipo": "Phishing",
+    "severidad": "Alta",
+    "estado": "Abierto",
+    "fecha": "07/09/2026",
+    "responsable": "Laura M.",
+    "descripcion": "Se detectó un correo electrónico sospechoso enviado a varios usuarios de la organización."
+  },
+  {
+    "id": "INC-002",
+    "tipo": "Malware",
+    "severidad": "Crítica",
+    "estado": "En análisis",
+    "fecha": "07/09/2026",
+    "responsable": "Carlos R.",
+    "descripcion": "Se identificó software malicioso en uno de los equipos de la organización."
+  },
+  {
+    "id": "INC-003",
+    "tipo": "Acceso no autorizado",
+    "severidad": "Media",
+    "estado": "Abierto",
+    "fecha": "06/09/2026",
+    "responsable": "Andrea P.",
+    "descripcion": "Se detectó un intento de acceso no autorizado a una cuenta institucional."
+  },
+  {
+    "id": "INC-004",
+    "tipo": "DDoS",
+    "severidad": "Alta",
+    "estado": "Resuelto",
+    "fecha": "05/09/2026",
+    "responsable": "Diego S.",
+    "descripcion": "Se detectó un ataque de denegación de servicio dirigido al servidor web."
+  },
+  {
+    "id": "INC-005",
+    "tipo": "Ransomware",
+    "severidad": "Crítica",
+    "estado": "En análisis",
+    "fecha": "04/09/2026",
+    "responsable": "María T.",
+    "descripcion": "Se identificó actividad asociada a ransomware en un equipo de la organización."
+  }
+]
