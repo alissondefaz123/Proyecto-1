@@ -1,3 +1,4 @@
+
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 
@@ -16,17 +17,29 @@ const Usuario = sequelize.define(
             validate: {
                 notEmpty: {
                     msg: "El nombre es obligatorio"
+                },
+                len: {
+                    args: [1, 100],
+                    msg: "El nombre debe tener entre 1 y 100 caracteres"
                 }
             }
         },
 
         username: {
-            type: DataTypes.STRING(50),
+            type: DataTypes.STRING(30),
             allowNull: false,
             unique: true,
             validate: {
                 notEmpty: {
                     msg: "El usuario es obligatorio"
+                },
+                len: {
+                    args: [3, 30],
+                    msg: "El usuario debe tener entre 3 y 30 caracteres"
+                },
+                is: {
+                    args: /^[a-zA-Z0-9_.-]+$/,
+                    msg: "El usuario contiene caracteres no permitidos"
                 }
             }
         },
