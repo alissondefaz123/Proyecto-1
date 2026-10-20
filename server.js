@@ -5,8 +5,10 @@ require("dotenv").config();
 
 const cors = require("cors");
 const helmet = require("helmet");
+const bcrypt = require("bcryptjs");
 
 const sequelize = require("./config/database");
+const Usuario = require("./models/usuario");
 
 const incidentesRoutes = require("./routes/incidentes.routes");
 const authRoutes = require("./routes/auth.routes");
@@ -44,7 +46,9 @@ app.use(
             }
 
             console.error("Origen bloqueado por CORS:", origin);
-            return callback(new Error("Origen no permitido por CORS"));
+            return callback(
+                new Error("Origen no permitido por CORS")
+            );
         },
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
@@ -107,7 +111,10 @@ app.get("/health", async (req, res) => {
             database: "connected"
         });
     } catch (error) {
-        console.error("Error comprobando la base de datos:", error);
+        console.error(
+            "Error comprobando la base de datos:",
+            error
+        );
 
         res.status(503).json({
             status: "error",
@@ -141,6 +148,44 @@ app.use("/api/incidentes", incidentesRoutes);
 app.use(errorHandler);
 
 // ======================================================
+// CREAR ADMINISTRADOR INICIAL SI NO EXISTE
+// ======================================================
+
+async function crearAdministradorInicial() {
+    const username = process.env.ADMIN_INITIAL_USERNAME;
+    const password = process.env.ADMIN_INITIAL_PASSWORD;
+
+    if (!username || !password) {
+        console.log(
+            "Variables del administrador inicial no configuradas."
+        );
+        return;
+    }
+
+    const existente = await Usuario.findOne({
+        where: { username }
+    });
+
+    if (existente) {
+        console.log(
+            "El administrador inicial ya existe; no se modificó."
+        );
+        return;
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await Usuario.create({
+        nombre: "Alisson",
+        username,
+        password: passwordHash,
+        rol: "ADMIN"
+    });
+
+    console.log("Administrador inicial creado correctamente.");
+}
+
+// ======================================================
 // CONEXIÓN, CREACIÓN DE TABLAS E INICIO DEL SERVIDOR
 // ======================================================
 
@@ -148,22 +193,39 @@ async function iniciarServidor() {
     try {
         await sequelize.authenticate();
 
-        console.log("Conexión con SQLite establecida correctamente.");
+        console.log(
+            "Conexión con SQLite establecida correctamente."
+        );
 
-        // Crea las tablas que falten para los modelos registrados.
-        // No elimina ni recrea las tablas existentes.
+        // Crea las tablas que falten.
         await sequelize.sync();
 
-        console.log("Tablas de la base de datos verificadas.");
+        console.log(
+            "Tablas de la base de datos verificadas."
+        );
+
+        // Inicializa el administrador si está configurado.
+        await crearAdministradorInicial();
 
         app.listen(PORT, "0.0.0.0", () => {
-            console.log(`Servidor iniciado en el puerto ${PORT}`);
-            console.log("Inicio de sesión disponible en /login.html");
-            console.log("API de autenticación disponible en /api/auth");
-            console.log("API de incidentes disponible en /api/incidentes");
+            console.log(
+                `Servidor iniciado en el puerto ${PORT}`
+            );
+            console.log(
+                "Inicio de sesión disponible en /login.html"
+            );
+            console.log(
+                "API de autenticación disponible en /api/auth"
+            );
+            console.log(
+                "API de incidentes disponible en /api/incidentes"
+            );
         });
     } catch (error) {
-        console.error("No se pudo iniciar el servidor:", error);
+        console.error(
+            "No se pudo iniciar el servidor:",
+            error
+        );
         process.exit(1);
     }
 }

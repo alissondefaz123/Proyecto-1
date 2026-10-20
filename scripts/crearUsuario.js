@@ -1,30 +1,49 @@
+
+require("dotenv").config();
+
 const bcrypt = require("bcryptjs");
 const Usuario = require("../models/usuario");
 
 async function crearUsuario() {
     try {
-        const passwordHash = await bcrypt.hash("Alisson123", 10);
+        const username = "alisson";
+        const password = process.env.ADMIN_INITIAL_PASSWORD;
 
-        const usuario = await Usuario.create({
+        if (!password) {
+            throw new Error(
+                "Falta configurar ADMIN_INITIAL_PASSWORD"
+            );
+        }
+
+        const existente = await Usuario.findOne({
+            where: { username }
+        });
+
+        if (existente) {
+            console.log(
+                "El usuario ya existe. No se creó otro."
+            );
+            return;
+        }
+
+        const passwordHash = await bcrypt.hash(password, 10);
+
+        await Usuario.create({
             nombre: "Alisson",
-            username: "alisson",
+            username,
             password: passwordHash,
             rol: "ADMIN"
         });
 
-        console.log("Usuario creado correctamente:");
-        console.log({
-            id: usuario.id,
-            nombre: usuario.nombre,
-            username: usuario.username,
-            rol: usuario.rol
-        });
-
-        process.exit(0);
-
+        console.log(
+            "Administrador creado correctamente: alisson"
+        );
     } catch (error) {
-        console.error("Error al crear usuario:", error);
-        process.exit(1);
+        console.error("Error al crear administrador:", error);
+        process.exitCode = 1;
+    } finally {
+        const sequelize = require("../config/database");
+        await sequelize.close();
     }
 }
 
