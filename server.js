@@ -1,3 +1,4 @@
+
 const express = require("express");
 const path = require("path");
 require("dotenv").config();
@@ -14,12 +15,48 @@ const logger = require("./middleware/logger");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
-
 const PORT = process.env.PORT || 3000;
 
+// ======================================================
+// CORS: DESARROLLO LOCAL Y PRODUCCIÓN EN RENDER
+// ======================================================
+
+const permitidos = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://plataforma-incidentes.onrender.com",
+    process.env.FRONTEND_URL
+]
+    .filter(Boolean)
+    .map((url) => url.trim().replace(/\/+$/, ""));
+
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            // Permitir peticiones sin Origin, por ejemplo herramientas
+            // de pruebas y algunas peticiones del servidor.
+            if (!origin) {
+                return callback(null, true);
+            }
+
+            const origenNormalizado = origin.replace(/\/+$/, "");
+
+            if (permitidos.includes(origenNormalizado)) {
+                return callback(null, true);
+            }
+
+            console.error("Origen bloqueado por CORS:", origin);
+
+            return callback(new Error("Origen no permitido por CORS"));
+        },
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+        optionsSuccessStatus: 204
+    })
+);
 
 // ======================================================
-// SEGURIDAD - HELMET + CONTENT SECURITY POLICY
+// SEGURIDAD: HELMET Y CONTENT SECURITY POLICY
 // ======================================================
 
 app.use(
@@ -27,84 +64,43 @@ app.use(
         contentSecurityPolicy: {
             directives: {
                 defaultSrc: ["'self'"],
-
-                // Solo JavaScript del propio proyecto
                 scriptSrc: ["'self'"],
-
-                // NO permitimos onclick, onsubmit, etc.
                 scriptSrcAttr: ["'none'"],
-
-                // Permitimos Bootstrap CSS externo
                 styleSrc: [
                     "'self'",
                     "https://cdn.jsdelivr.net"
                 ],
-
                 styleSrcElem: [
                     "'self'",
                     "https://cdn.jsdelivr.net"
                 ],
-
-                // Imágenes locales y data
-                imgSrc: [
-                    "'self'",
-                    "data:"
-                ],
-
-                // Fuentes
+                imgSrc: ["'self'", "data:"],
                 fontSrc: [
                     "'self'",
                     "https://cdn.jsdelivr.net"
                 ],
-
-                // Peticiones únicamente al mismo servidor
-                connectSrc: [
-                    "'self'"
-                ],
-
+                connectSrc: ["'self'"],
                 objectSrc: ["'none'"],
-
                 baseUri: ["'self'"],
-
                 formAction: ["'self'"],
-
                 frameAncestors: ["'self'"]
             }
         }
     })
 );
 
-
-// ======================================================
-// CORS
-// ======================================================
-
-const permitidos = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    process.env.FRONTEND_URL
-].filter(Boolean);
-
-app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || permitidos.includes(origin)) {
-            return callback(null, true);
-        }
-
-        return callback(new Error("Origen no permitido por CORS"));
-    },
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-}));
-
-
 // ======================================================
 // MIDDLEWARE GENERAL
 // ======================================================
 
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true }));
 app.use(logger);
+
+// ======================================================
+// COMPROBACIÓN DE SALUD Y BASE DE DATOS
+// ======================================================
+
 app.get("/health", async (req, res) => {
     try {
         await sequelize.authenticate();
@@ -114,6 +110,8 @@ app.get("/health", async (req, res) => {
             database: "connected"
         });
     } catch (error) {
+        console.error("Error comprobando la base de datos:", error);
+
         res.status(503).json({
             status: "error",
             database: "disconnected"
@@ -121,34 +119,23 @@ app.get("/health", async (req, res) => {
     }
 });
 
-
 // ======================================================
 // ARCHIVOS DEL FRONTEND
 // ======================================================
 
-app.use(
-    express.static(path.join(__dirname, "public"))
-)
+app.use(express.static(path.join(__dirname, "public")));
 
 // ======================================================
-// AUTENTICACIÓN
+// RUTAS DE AUTENTICACIÓN
 // ======================================================
 
-app.use(
-    "/api/auth",
-    authRoutes
-);
-
+app.use("/api/auth", authRoutes);
 
 // ======================================================
 // API DE INCIDENTES
 // ======================================================
 
-app.use(
-    "/api/incidentes",
-    incidentesRoutes
-);
-
+app.use("/api/incidentes", incidentesRoutes);
 
 // ======================================================
 // MANEJO CENTRALIZADO DE ERRORES
@@ -156,43 +143,30 @@ app.use(
 
 app.use(errorHandler);
 
-
 // ======================================================
-// CONEXIÓN A BASE DE DATOS
+// CONEXIÓN A BASE DE DATOS E INICIO DEL SERVIDOR
 // ======================================================
 
-sequelize.authenticate()
+async function iniciarServidor() {
+    try {
+        await sequelize.authenticate();
 
-    .then(() => {
+        console.log("Conexión con SQLite establecida correctamente.");
 
-        console.log(
-            "Conexión con SQLite establecida correctamente."
-        );
-
-        app.listen(PORT, () => {
-
-            console.log(
-                `Servidor ejecutándose en http://localhost:${PORT}`
-            );
-
-            console.log(
-                `Login disponible en http://localhost:${PORT}/login.html`
-            );
-
-            console.log(
-                `API disponible en http://localhost:${PORT}/api/incidentes`
-            );
-
+        app.listen(PORT, "0.0.0.0", () => {
+            console.log(`Servidor iniciado en el puerto ${PORT}`);
+            console.log("Frontend disponible en la raíz de la aplicación.");
+            console.log("API de autenticación disponible en /api/auth");
+            console.log("API de incidentes disponible en /api/incidentes");
         });
-
-    })
-
-    .catch((error) => {
-
+    } catch (error) {
         console.error(
-            "No se pudo conectar con la base de datos:",
+            "No se pudo conectar a la base de datos:",
             error
         );
 
-    });
-    
+        process.exit(1);
+    }
+}
+
+iniciarServidor();
