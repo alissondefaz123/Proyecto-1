@@ -1,6 +1,6 @@
 node_modules/
 .env
-.git/
+.env.*
 *.log
 database/*.sqlite
 database/*.sqlite-*
