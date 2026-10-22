@@ -1,7 +1,7 @@
 # CyberMonitor — Plataforma de gestión de incidentes de ciberseguridad
 
-**Proyecto integrador de Desarrollo de Plataformas**  
-**Periodo:** Octubre de 2026  
+**Proyecto integrador de Desarrollo de Plataformas**
+**Periodo:** Octubre de 2026
 **Estudiante:** Alisson Valeria Defaz Montero
 
 **Aplicación publicada:** https://plataforma-incidentes.onrender.com
@@ -357,4 +357,4 @@ La documentación reúne la información necesaria para comprender la estructura
 
 ---
 
-**Fin de la documentación técnica de CyberMonitor.**
+**Fin**
